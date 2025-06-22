@@ -30,6 +30,10 @@ import {
   FiArrowLeft,
   FiLoader,
   FiTrash2,
+  FiChevronsLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsRight,
 } from 'react-icons/fi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -105,6 +109,8 @@ export default function OrdersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
 
   useEffect(() => {
     loadOrders()
@@ -185,6 +191,14 @@ export default function OrdersPage() {
 
     return searchMatch && statusMatch && paymentStatusMatch && priorityMatch
   })
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = filteredOrders.slice(startIndex, endIndex)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -542,12 +556,12 @@ export default function OrdersPage() {
       </Card>
 
       {/* Orders List */}
-      <Card className='overflow-hidden'>
+      <Card className='overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-white via-gray-50/20 to-white'>
         <div className='overflow-x-auto'>
           <table className='w-full'>
             <thead>
-              <tr className='bg-gray-50 border-b'>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <tr className='bg-gray-50 border-b border-gray-200'>
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                   <input
                     type='checkbox'
                     checked={selectedOrders.length === filteredOrders.length}
@@ -563,49 +577,83 @@ export default function OrdersPage() {
                     className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
                   />
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Order
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                    Order
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Customer
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                    Customer
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Status
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+                    Status
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Payment
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                    Payment
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Total
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                    Total
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Date
+                <th className='px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-rose-400 rounded-full"></div>
+                    Date
+                  </div>
                 </th>
-                <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Actions
+                <th className='px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <div className="flex items-center justify-end gap-2">
+                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+                    Actions
+                  </div>
                 </th>
               </tr>
             </thead>
-            <tbody className='divide-y divide-gray-200'>
+            <tbody className='divide-y divide-gray-100/60'>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className='text-center py-8'>
-                    <div className='flex items-center justify-center gap-2 text-gray-500'>
-                      <FiLoader className='h-5 w-5 animate-spin' />
-                      Loading orders...
+                  <td colSpan={8} className='text-center py-12'>
+                    <div className='flex flex-col items-center gap-3'>
+                      <div className="relative">
+                        <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-200 border-t-blue-600"></div>
+                        <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-blue-400 animate-pulse"></div>
+                      </div>
+                      <span className='text-sm font-medium text-gray-600'>Loading orders...</span>
                     </div>
                   </td>
                 </tr>
               ) : ordersList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className='text-center py-8 text-gray-500'>
-                    No orders found
+                  <td colSpan={8} className='text-center py-12'>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <FiPackage className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <div className="text-gray-500">
+                        <p className="font-medium">No orders found</p>
+                        <p className="text-sm">Orders will appear here once created</p>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => order && (
-                  <tr key={order.id} className='hover:bg-gray-50'>
-                    <td className='px-6 py-4'>
+                currentItems.map((order, index) => order && (
+                  <tr key={order.id} className={`hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-indigo-50/60 transition-all duration-200 group relative ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
+                  }`}>
+                    <td className='px-6 py-5'>
                       <input
                         type='checkbox'
                         checked={selectedOrders.includes(order.id)}
@@ -621,60 +669,96 @@ export default function OrdersPage() {
                         className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
                       />
                     </td>
-                    <td className='px-6 py-4'>
-                      <div>
-                        <div className='font-medium text-gray-900'>
-                          {order.id.slice(0, 8)}
+                    <td className='px-6 py-5'>
+                      <div className="space-y-1">
+                        <div className='font-medium text-gray-900 text-sm group-hover:text-blue-700 transition-colors duration-200'>
+                          #{order.id.slice(0, 8)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Order ID
                         </div>
                       </div>
                     </td>
-                    <td className='px-6 py-4'>
-                      <div>
-                        <div className='font-medium text-gray-900'>
-                          {order.guestEmail || 'Guest'}
+                    <td className='px-6 py-5'>
+                      <div className="space-y-1">
+                        <div className='font-medium text-gray-900 text-sm'>
+                          {order.guestEmail || 'Guest User'}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {order.userId ? 'Registered' : 'Guest Checkout'}
                         </div>
                       </div>
                     </td>
-                    <td className='px-6 py-4'>
+                    <td className='px-6 py-5'>
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          order.status
-                        )}`}
+                        className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm border ${
+                          order.status === 'pending' 
+                            ? 'bg-gradient-to-r from-yellow-50 to-orange-50 text-yellow-700 border-yellow-200'
+                            : order.status === 'processing'
+                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border-blue-200'
+                            : order.status === 'shipped'
+                            ? 'bg-gradient-to-r from-purple-50 to-violet-50 text-purple-700 border-purple-200'
+                            : order.status === 'delivered' || order.status === 'completed'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200'
+                            : order.status === 'cancelled'
+                            ? 'bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200'
+                            : 'bg-gradient-to-r from-gray-50 to-slate-50 text-gray-700 border-gray-200'
+                        }`}
                       >
-                        {order.status.charAt(0).toUpperCase() +
-                          order.status.slice(1)}
+                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                          order.status === 'pending' ? 'bg-yellow-500' :
+                          order.status === 'processing' ? 'bg-blue-500' :
+                          order.status === 'shipped' ? 'bg-purple-500' :
+                          order.status === 'delivered' || order.status === 'completed' ? 'bg-green-500' :
+                          order.status === 'cancelled' ? 'bg-red-500' : 'bg-gray-500'
+                        }`}></div>
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </span>
                     </td>
-                    <td className='px-6 py-4'>
-                      <div className='space-y-1'>
-                        <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
+                    <td className='px-6 py-5'>
+                      <div className="space-y-1">
+                        <span className='inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 shadow-sm'>
                           {order.paymentMethod
-                            ? order.paymentMethod.charAt(0).toUpperCase() +
-                              order.paymentMethod.slice(1)
+                            ? order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)
                             : 'N/A'}
                         </span>
+                        <div className="text-xs text-gray-500">
+                          {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                        </div>
                       </div>
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-900'>
-                      ${Number(order.totalAmount || 0).toFixed(2)}
+                    <td className='px-6 py-5'>
+                      <div className="text-sm font-bold text-gray-900">
+                        ${Number(order.totalAmount || 0).toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {order.items?.length || 0} items
+                      </div>
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-500'>
-                      {order.createdAt
-                        ? new Date(order.createdAt).toLocaleDateString()
-                        : 'N/A'}
+                    <td className='px-6 py-5'>
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString()
+                          : 'N/A'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleTimeString()
+                          : 'N/A'}
+                      </div>
                     </td>
-                    <td className='px-6 py-4 text-right'>
-                      <div className='flex items-center justify-end gap-2'>
+                    <td className='px-6 py-5 text-right'>
+                      <div className='flex items-center justify-end gap-1.5'>
                         <button
                           onClick={() => handleViewOrder(order)}
-                          className='p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors'
+                          className='p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md'
                           title='View Details'
                         >
                           <FiEye className='h-4 w-4' />
                         </button>
                         <button
                           onClick={() => handleEditOrder(order)}
-                          className='p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors'
+                          className='p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md'
                           title='Edit Order'
                         >
                           <FiEdit2 className='h-4 w-4' />
@@ -684,7 +768,7 @@ export default function OrdersPage() {
                             setOrderToDelete(order)
                             setIsDeleteDialogOpen(true)
                           }}
-                          className='p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors'
+                          className='p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md'
                           title='Delete Order'
                         >
                           <FiTrash2 className='h-4 w-4' />
@@ -696,6 +780,107 @@ export default function OrdersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Premium Pagination - Integrated into table card */}
+        <div className="flex items-center justify-between pt-6 mt-6 pb-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 pl-2 pb-1">
+            <span>Showing</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)}
+            </span>
+            <span>of</span>
+            <span className="font-medium text-gray-900 dark:text-white">{filteredOrders.length}</span>
+            <span>orders</span>
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(1)}
+                disabled={currentPage === 1}
+                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <FiChevronsLeft className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {(() => {
+                  const pageNumbers: (number | string)[] = []
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) {
+                      pageNumbers.push(i)
+                    }
+                  } else {
+                    if (currentPage <= 4) {
+                      pageNumbers.push(1, 2, 3, 4, 5, '...', totalPages)
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNumbers.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+                    } else {
+                      pageNumbers.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+                    }
+                  }
+                  
+                  return pageNumbers.map((page, index) =>
+                    typeof page === 'number' ? (
+                      <Button
+                        key={index}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => paginate(page)}
+                        className={`h-9 w-9 p-0 ${
+                          currentPage === page
+                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                            : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ) : (
+                      <span
+                        key={index}
+                        className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        ...
+                      </span>
+                    )
+                  )
+                })()}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <FiChevronRight className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <FiChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 

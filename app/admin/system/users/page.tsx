@@ -482,6 +482,8 @@ export default function UsersPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5)
 
   // Fetch users on component mount
   useEffect(() => {
@@ -681,18 +683,13 @@ export default function UsersPage() {
         method: 'DELETE',
       })
 
-      const result = await response.json()
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete user')
       }
 
-      // Remove from UI immediately
-      setUsers(users.filter((user) => user.id !== id))
+      setUsers(users.filter(user => user.id !== id))
       toast.success('User deleted successfully')
-      
-      // Refresh data to ensure sync with database
-      await fetchUsers()
     } catch (error) {
       console.error('Error deleting user:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to delete user')
@@ -700,6 +697,14 @@ export default function UsersPage() {
       setIsDeleting(null)
     }
   }
+
+  // Pagination logic
+  const totalPages = Math.ceil(users.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = users.slice(startIndex, endIndex)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const ViewModal = () => (
     <motion.div
@@ -1163,7 +1168,7 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {currentItems.map((user) => (
                     <tr
                       key={user.id}
                       className='border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -1270,6 +1275,81 @@ export default function UsersPage() {
               </table>
             )}
           </div>
+
+          {/* Premium Pagination - Integrated into table card */}
+          {!isLoading && users.length > 0 && (
+            <div className="flex items-center justify-between pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <span>Showing</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {startIndex + 1}-{Math.min(endIndex, users.length)}
+                </span>
+                <span>of</span>
+                <span className="font-medium text-gray-900 dark:text-white">{users.length}</span>
+                <span>users</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => paginate(1)}
+                  disabled={currentPage === 1}
+                  className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  First
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => paginate(page)}
+                      className={`h-9 w-9 p-0 ${
+                        currentPage === page
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Next
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => paginate(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
 

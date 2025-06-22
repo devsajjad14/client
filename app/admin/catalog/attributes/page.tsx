@@ -14,6 +14,10 @@ import {
   FiChevronDown,
   FiTag,
   FiLoader,
+  FiChevronsLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsRight,
 } from 'react-icons/fi'
 import { getAttributes, deleteAttribute } from '@/lib/actions/attributes'
 import { useRouter } from 'next/navigation'
@@ -22,9 +26,16 @@ interface Attribute {
   id: string
   name: string
   display: string
-  status: 'active' | 'draft' | 'archived'
-  createdAt: string
-  values: { value: string }[]
+  status: string
+  createdAt: Date | null
+  updatedAt: Date | null
+  values: { 
+    id: string
+    value: string
+    updatedAt: Date | null
+    createdAt: Date | null
+    attributeId: string
+  }[]
 }
 
 export default function AttributesPage() {
@@ -32,6 +43,8 @@ export default function AttributesPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [attributes, setAttributes] = useState<Attribute[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5) // Show 5 attributes per page
   const router = useRouter()
 
   useEffect(() => {
@@ -65,6 +78,14 @@ export default function AttributesPage() {
     attr.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     attr.display.toLowerCase().includes(searchQuery.toLowerCase())
   )
+  
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredAttributes.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredAttributes.length / itemsPerPage)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   return (
     <div className="space-y-6">
@@ -143,14 +164,14 @@ export default function AttributesPage() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredAttributes.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     No attributes found
                   </td>
                 </tr>
               ) : (
-                filteredAttributes.map((attribute) => (
+                currentItems.map((attribute) => (
                   <tr key={attribute.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -225,6 +246,82 @@ export default function AttributesPage() {
           </table>
         </div>
       </Card>
+
+      {/* Pagination */}
+      {!isLoading && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredAttributes.length)} of {filteredAttributes.length} attributes
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNumber
+                if (totalPages <= 5) {
+                  pageNumber = i + 1
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i
+                } else {
+                  pageNumber = currentPage - 2 + i
+                }
+                
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => paginate(pageNumber)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {pageNumber}
+                  </Button>
+                )
+              })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 } 

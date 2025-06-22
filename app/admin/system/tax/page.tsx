@@ -14,6 +14,10 @@ import {
   FiPercent,
   FiCheck,
   FiXCircle,
+  FiChevronsLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsRight,
 } from 'react-icons/fi'
 import { toast } from 'sonner'
 
@@ -324,6 +328,8 @@ export default function TaxPage() {
   })
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5)
 
   useEffect(() => {
     fetchRates()
@@ -465,6 +471,14 @@ export default function TaxPage() {
       setIsDeleting(null)
     }
   }
+
+  // Pagination logic
+  const totalPages = Math.ceil(rates.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = rates.slice(startIndex, endIndex)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const ViewModal = () => (
     <motion.div
@@ -844,7 +858,7 @@ export default function TaxPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rates.map((rate) => (
+                  {currentItems.map((rate) => (
                     <tr
                       key={rate.id}
                       className='border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -934,6 +948,109 @@ export default function TaxPage() {
               </table>
             )}
           </div>
+
+          {/* Premium Pagination - Integrated into table card */}
+          {!isLoading && rates.length > 0 && (
+            <div className="flex items-center justify-between pt-6 mt-6 pb-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 pl-2 pb-1">
+                <span>Showing</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {startIndex + 1}-{Math.min(endIndex, rates.length)}
+                </span>
+                <span>of</span>
+                <span className="font-medium text-gray-900 dark:text-white">{rates.length}</span>
+                <span>rates</span>
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(1)}
+                    disabled={currentPage === 1}
+                    className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <FiChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <FiChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {(() => {
+                      const pageNumbers: (number | string)[] = []
+                      if (totalPages <= 7) {
+                        for (let i = 1; i <= totalPages; i++) {
+                          pageNumbers.push(i)
+                        }
+                      } else {
+                        if (currentPage <= 4) {
+                          pageNumbers.push(1, 2, 3, 4, 5, '...', totalPages)
+                        } else if (currentPage >= totalPages - 3) {
+                          pageNumbers.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+                        } else {
+                          pageNumbers.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+                        }
+                      }
+                      
+                      return pageNumbers.map((page, index) =>
+                        typeof page === 'number' ? (
+                          <Button
+                            key={index}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => paginate(page)}
+                            className={`h-9 w-9 p-0 ${
+                              currentPage === page
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {page}
+                          </Button>
+                        ) : (
+                          <span
+                            key={index}
+                            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                          >
+                            ...
+                          </span>
+                        )
+                      )
+                    })()}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <FiChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <FiChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       </div>
 

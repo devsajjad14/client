@@ -174,25 +174,46 @@ export default function EditBrandPage({
     }
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'brands')
+      // Delete old logo if it exists
+      if (formData.logo) {
+        try {
+          await fetch(`/api/upload/brand-logo?url=${encodeURIComponent(formData.logo)}`, {
+            method: 'DELETE',
+          })
+          console.log('Old logo deleted successfully')
+        } catch (error) {
+          console.error('Error deleting old logo:', error)
+          // Continue with upload even if deletion fails
+        }
+      }
 
-      const response = await fetch('/api/upload', {
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+      uploadFormData.append('brandId', formData.id.toString())
+
+      const response = await fetch('/api/upload/brand-logo', {
         method: 'POST',
-        body: formData,
+        body: uploadFormData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Upload failed')
+      }
 
       const data = await response.json()
       setFormData((prev) => ({ ...prev, logo: data.url }))
       setLogoPreview(URL.createObjectURL(file))
+      
+      toast({
+        title: 'Success',
+        description: 'Logo uploaded successfully',
+      })
     } catch (error) {
       console.error('Error uploading file:', error)
       toast({
         title: 'Error',
-        description: 'Failed to upload logo',
+        description: error instanceof Error ? error.message : 'Failed to upload logo',
         variant: 'destructive',
       })
     }

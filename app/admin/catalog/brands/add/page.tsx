@@ -55,6 +55,18 @@ export default function AddBrandPage() {
         })
         router.push('/admin/catalog/brands')
       } else {
+        // If brand creation fails, delete the uploaded logo
+        if (formData.logo) {
+          try {
+            await fetch(`/api/upload/brand-logo?url=${encodeURIComponent(formData.logo)}`, {
+              method: 'DELETE',
+            })
+            console.log('Uploaded logo deleted due to brand creation failure')
+          } catch (error) {
+            console.error('Error deleting uploaded logo:', error)
+          }
+        }
+        
         toast({
           title: 'Error',
           description: response.error || 'Failed to add brand',
@@ -62,6 +74,18 @@ export default function AddBrandPage() {
         })
       }
     } catch (error) {
+      // If there's an error, delete the uploaded logo
+      if (formData.logo) {
+        try {
+          await fetch(`/api/upload/brand-logo?url=${encodeURIComponent(formData.logo)}`, {
+            method: 'DELETE',
+          })
+          console.log('Uploaded logo deleted due to error')
+        } catch (deleteError) {
+          console.error('Error deleting uploaded logo:', deleteError)
+        }
+      }
+      
       console.error('Error adding brand:', error)
       toast({
         title: 'Error',
@@ -113,26 +137,50 @@ export default function AddBrandPage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', 'brands')
+      // For new brands, we don't have an ID yet, so we'll use a temporary identifier
+      formData.append('brandId', 'new')
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload/brand-logo', {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Upload failed')
+      }
 
       const data = await response.json()
       setFormData((prev) => ({ ...prev, logo: data.url }))
       setLogoPreview(URL.createObjectURL(file))
+      
+      toast({
+        title: 'Success',
+        description: 'Logo uploaded successfully',
+      })
     } catch (error) {
       console.error('Error uploading file:', error)
       toast({
         title: 'Error',
-        description: 'Failed to upload logo',
+        description: error instanceof Error ? error.message : 'Failed to upload logo',
         variant: 'destructive',
       })
     }
+  }
+
+  const handleCancel = async () => {
+    // Delete uploaded logo if user cancels
+    if (formData.logo) {
+      try {
+        await fetch(`/api/upload/brand-logo?url=${encodeURIComponent(formData.logo)}`, {
+          method: 'DELETE',
+        })
+        console.log('Uploaded logo deleted due to cancellation')
+      } catch (error) {
+        console.error('Error deleting uploaded logo:', error)
+      }
+    }
+    router.back()
   }
 
   return (
@@ -141,7 +189,7 @@ export default function AddBrandPage() {
         <div className='flex items-center gap-4'>
           <Button
             variant='ghost'
-            onClick={() => router.back()}
+            onClick={handleCancel}
             className='h-10'
           >
             <FiArrowLeft className='mr-2' />
@@ -152,7 +200,7 @@ export default function AddBrandPage() {
         <div className='flex items-center gap-2'>
           <Button
             variant='outline'
-            onClick={() => router.back()}
+            onClick={handleCancel}
             disabled={isSaving}
             className='h-10'
           >

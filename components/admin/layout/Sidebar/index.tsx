@@ -13,6 +13,8 @@ import {
   FiBarChart,
   FiServer,
   FiDatabase,
+  FiLayers,
+  FiMonitor,
 } from 'react-icons/fi'
 import { Logo } from '../../Logo'
 
@@ -258,6 +260,58 @@ export function Sidebar({ className }: { className?: string }) {
               <NavItem
                 href='/admin/seed/delete'
                 label='Delete Data'
+                nested
+                isOpen={isOpen}
+              />
+            </NavGroup>
+          </li>
+
+          {/* Upcoming Features */}
+          <li className='mt-8'>
+            <div className={`mb-3 ${isOpen ? 'px-3' : 'px-2'}`}>
+              <div className='flex items-center gap-2'>
+                <div className='w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse'></div>
+                {isOpen && (
+                  <span className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                    Upcoming
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <NavGroup
+              icon={<FiLayers />}
+              title='Data Manager'
+              isOpen={isOpen}
+              expanded={expandedGroup === 'Data Manager'}
+              onToggle={() => handleGroupClick('Data Manager')}
+            >
+              <NavItem
+                href='/admin/data-manager/import'
+                label='Import Data'
+                nested
+                isOpen={isOpen}
+              />
+              <NavItem
+                href='/admin/data-manager/export'
+                label='Export Data'
+                nested
+                isOpen={isOpen}
+              />
+            </NavGroup>
+          </li>
+
+          <li>
+            <NavGroup
+              icon={<FiMonitor />}
+              title='CMS'
+              isOpen={isOpen}
+              expanded={expandedGroup === 'CMS'}
+              onToggle={() => handleGroupClick('CMS')}
+            >
+              <NavItem
+                href='/admin/cms/content'
+                label='Content'
                 nested
                 isOpen={isOpen}
               />

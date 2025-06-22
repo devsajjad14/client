@@ -957,9 +957,9 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className='space-y-2'>
-              {inventoryInsights.topSellingProducts.map((product) => (
+              {inventoryInsights.topSellingProducts.map((product, index) => (
                 <div
-                  key={product.name}
+                  key={`top-selling-${product.id || index}`}
                   className='flex justify-between text-sm'
                 >
                   <span>{product.name}</span>
@@ -979,9 +979,9 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className='space-y-2'>
-              {inventoryInsights.recentRestocks.map((product) => (
+              {inventoryInsights.recentRestocks.map((product, index) => (
                 <div
-                  key={product.name}
+                  key={`recent-restock-${product.id || index}`}
                   className='flex justify-between text-sm'
                 >
                   <span>{product.name}</span>

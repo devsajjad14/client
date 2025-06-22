@@ -22,6 +22,10 @@ import {
   FiEdit2,
   FiChevronUp,
   FiLoader,
+  FiChevronsLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsRight,
 } from 'react-icons/fi'
 import { getProducts, updateProduct, getProduct } from '@/lib/actions/products'
 import { toast } from 'sonner'
@@ -48,6 +52,8 @@ export default function InventoryPage() {
   const [editReason, setEditReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10) // Show 10 inventory items per page
   const [filters, setFilters] = useState({
     stockStatus: 'all',
     category: 'all',
@@ -77,7 +83,7 @@ export default function InventoryPage() {
         status: getStockStatus(product.stockQuantity || 0, product.lowStockThreshold || 10),
         lastUpdated: product.updatedAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
         trend: 'stable' as const, // This would need to be calculated based on historical data
-        value: (product.stockQuantity || 0) * (product.sellingPrice || 0)
+        value: ((product.stockQuantity || 0) * (Number(product.sellingPrice) || 0))
       }))
 
       setInventory(inventoryItems)
@@ -134,6 +140,14 @@ export default function InventoryPage() {
 
     return searchMatch && stockStatusMatch && categoryMatch && trendMatch && valueMatch
   })
+  
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredInventory.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   // Get unique categories for filter
   const categories = Array.from(new Set(inventory.map(item => item.category)))
@@ -176,19 +190,27 @@ export default function InventoryPage() {
         smallPicture: fullProduct.smallPicture || '',
         mediumPicture: fullProduct.mediumPicture || '',
         largePicture: fullProduct.largePicture || '',
-        department: fullProduct.department,
-        type: fullProduct.type,
-        subType: fullProduct.subType,
-        brand: fullProduct.brand,
-        sellingPrice: fullProduct.sellingPrice,
-        regularPrice: fullProduct.regularPrice,
-        longDescription: fullProduct.longDescription,
-        tags: fullProduct.tags,
-        urlHandle: fullProduct.urlHandle,
-        barcode: fullProduct.barcode,
-        sku: fullProduct.sku,
+        department: fullProduct.department || '',
+        type: fullProduct.type || '',
+        subType: fullProduct.subType || '',
+        brand: fullProduct.brand || '',
+        sellingPrice: Number(fullProduct.sellingPrice),
+        regularPrice: Number(fullProduct.regularPrice),
+        longDescription: fullProduct.longDescription || '',
+        of7: fullProduct.of7 || '',
+        of12: fullProduct.of12 || '',
+        of13: fullProduct.of13 || '',
+        of15: fullProduct.of15 || '',
+        forceBuyQtyLimit: fullProduct.forceBuyQtyLimit || '',
+        lastReceived: fullProduct.lastReceived || '',
+        tags: fullProduct.tags || '',
+        urlHandle: fullProduct.urlHandle || '',
+        barcode: fullProduct.barcode || '',
+        sku: fullProduct.sku || '',
+        trackInventory: fullProduct.trackInventory,
         stockQuantity: editValue,
         lowStockThreshold: product.lowStockThreshold,
+        continueSellingOutOfStock: fullProduct.continueSellingOutOfStock,
         variations: fullProduct.variations,
         alternateImages: fullProduct.alternateImages
       }
@@ -413,50 +435,87 @@ export default function InventoryPage() {
       </Card>
 
       {/* Inventory List */}
-      <Card>
+      <Card className="overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-white via-gray-50/20 to-white">
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="flex items-center justify-center p-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-200 border-t-blue-600"></div>
+                  <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-blue-400 animate-pulse"></div>
+                </div>
+                <span className="text-sm font-medium text-gray-600">Loading inventory data...</span>
+              </div>
             </div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                      Product Details
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock Level
+                  <th className="px-5 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                      Stock Level
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                  <th className="px-5 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+                      Status
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trend
+                  <th className="px-5 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                      Trend
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value
+                  <th className="px-5 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                      Value
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Updated
+                  <th className="px-5 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-rose-400 rounded-full"></div>
+                      Last Updated
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                  <th className="px-5 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+                      Actions
+                    </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredInventory.map((item) => (
-                  <tr key={item.styleId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500">{item.sku}</div>
-                        <div className="text-xs text-gray-400">{item.category}</div>
+              <tbody className="divide-y divide-gray-100/60">
+                {currentItems.map((item, index) => (
+                  <tr key={item.styleId} className={`hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-indigo-50/60 transition-all duration-200 group relative ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
+                  }`}>
+                    <td className="px-6 py-4 border-r border-gray-100/60">
+                      <div className="space-y-2">
+                        <div className="font-medium text-gray-900 text-sm group-hover:text-blue-700 transition-colors duration-200 leading-tight">
+                          {item.name}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                            {item.sku}
+                          </span>
+                          <span className="text-xs font-medium text-gray-500 bg-blue-50 px-2 py-1 rounded-md border border-blue-200/50">
+                            {item.category}
+                          </span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4 border-r border-gray-100/60">
                       {editingId === item.styleId ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
@@ -465,85 +524,111 @@ export default function InventoryPage() {
                               min="0"
                               value={editValue}
                               onChange={(e) => setEditValue(parseInt(e.target.value))}
-                              className="h-9 w-32 px-3 text-sm border border-gray-300 bg-gray-50 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              className="h-8 w-28 px-2 text-sm border border-gray-300 bg-white rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-100 shadow-sm transition-all duration-200"
                             />
                             <button
                               onClick={() => handleSaveEdit(item.styleId)}
-                              className="h-9 w-9 p-0 text-green-600 hover:text-green-700"
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-all duration-200 shadow-sm"
                             >
-                              <FiCheck className="h-5 w-5" />
+                              <FiCheck className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={handleCancelEdit}
-                              className="h-9 w-9 p-0 text-red-600 hover:text-red-700"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-all duration-200 shadow-sm"
                             >
-                              <FiX className="h-5 w-5" />
+                              <FiX className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           <Input
                             placeholder="Reason for change..."
                             value={editReason}
                             onChange={(e) => setEditReason(e.target.value)}
-                            className="h-9 w-full px-3 text-sm border border-gray-300 bg-gray-50 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            className="h-7 w-full px-2 text-xs border border-gray-300 bg-white rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-100 shadow-sm transition-all duration-200"
                           />
                         </div>
                       ) : (
                         <div 
-                          className="flex items-center gap-2 cursor-pointer group"
+                          className="flex items-center gap-2 cursor-pointer group/stock"
                           onClick={() => handleStartEdit(item)}
                         >
                           <div className="relative">
-                            <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 flex items-center gap-2">
-                              {item.currentStock} units
-                              <span className="text-xs text-gray-400 group-hover:text-blue-400">
-                                (Click to edit)
+                            <div className="text-sm font-semibold text-gray-900 group-hover/stock:text-blue-700 transition-all duration-200 flex items-center gap-2">
+                              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-1 rounded-md shadow-sm text-xs font-medium">
+                                {item.currentStock.toLocaleString()}
+                              </span>
+                              <span className="text-xs text-gray-500">units</span>
+                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium">
+                                Edit
                               </span>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Low stock at {item.lowStockThreshold} units
+                            <div className="text-xs text-gray-500 mt-1">
+                              Low stock at <span className="text-orange-600 font-medium">{item.lowStockThreshold}</span> units
                             </div>
-                            <div className="absolute -left-2 -top-2 h-6 w-6 rounded-full bg-blue-100 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <FiEdit2 className="h-3 w-3 text-blue-600" />
+                            <div className="absolute -left-1.5 -top-1.5 h-5 w-5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 opacity-0 group-hover/stock:opacity-100 transition-all duration-200 flex items-center justify-center shadow-md">
+                              <FiEdit2 className="h-2.5 w-2.5 text-white" />
                             </div>
                           </div>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    <td className="px-5 py-4 border-r border-gray-100/60">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium shadow-sm border
                         ${item.status === 'in_stock' 
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200'
                           : item.status === 'low_stock'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 text-yellow-700 border-yellow-200'
+                          : 'bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200'
                         }`}
                       >
+                        <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                          item.status === 'in_stock' ? 'bg-green-500' :
+                          item.status === 'low_stock' ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}></div>
                         {item.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
+                    <td className="px-5 py-4 border-r border-gray-100/60">
+                      <div className="flex items-center justify-center">
                         {item.trend === 'up' ? (
-                          <FiTrendingUp className="h-4 w-4 text-green-500" />
+                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200 shadow-sm">
+                            <FiTrendingUp className="h-3 w-3" />
+                            <span className="text-xs font-medium">Up</span>
+                          </div>
                         ) : item.trend === 'down' ? (
-                          <FiTrendingDown className="h-4 w-4 text-red-500" />
+                          <div className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200 shadow-sm">
+                            <FiTrendingDown className="h-3 w-3" />
+                            <span className="text-xs font-medium">Down</span>
+                          </div>
                         ) : (
-                          <div className="h-4 w-4 text-gray-400">—</div>
+                          <div className="flex items-center gap-1 text-gray-600 bg-gray-50 px-2 py-1 rounded-md border border-gray-200 shadow-sm">
+                            <div className="h-3 w-3 text-center text-xs">—</div>
+                            <span className="text-xs font-medium">Stable</span>
+                          </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      ${item.value.toLocaleString()}
+                    <td className="px-5 py-4 border-r border-gray-100/60">
+                      <div className="text-sm font-semibold text-gray-900 bg-gradient-to-r from-emerald-50 to-green-50 px-2.5 py-1.5 rounded-md border border-emerald-200 shadow-sm">
+                        ${item.value.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        ${item.currentStock > 0 ? (item.value / item.currentStock).toFixed(2) : '0.00'} per unit
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(item.lastUpdated).toLocaleDateString()}
+                    <td className="px-5 py-4 border-r border-gray-100/60">
+                      <div className="text-xs font-medium text-gray-900 bg-gray-50 px-2 py-1 rounded-md border border-gray-200">
+                        {new Date(item.lastUpdated).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(item.lastUpdated).toLocaleTimeString()}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 py-4 text-right">
                       <button
                         onClick={() => handleStartEdit(item)}
-                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 rounded-md transition-all duration-200 border border-gray-600 shadow-sm hover:shadow-md transform hover:scale-105"
                       >
-                        <FiEdit2 className="h-4 w-4 mr-1.5" />
+                        <FiEdit2 className="h-3 w-3 mr-1" />
                         Edit Stock
                       </button>
                     </td>
@@ -554,6 +639,82 @@ export default function InventoryPage() {
           )}
         </div>
       </Card>
+
+      {/* Pagination */}
+      {!isLoading && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredInventory.length)} of {filteredInventory.length} inventory items
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNumber
+                if (totalPages <= 5) {
+                  pageNumber = i + 1
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i
+                } else {
+                  pageNumber = currentPage - 2 + i
+                }
+                
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => paginate(pageNumber)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {pageNumber}
+                  </Button>
+                )
+              })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => paginate(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <FiChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Edit Stock Modal */}
       {editingId && (
