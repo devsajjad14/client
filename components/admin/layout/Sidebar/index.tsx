@@ -243,7 +243,7 @@ export function Sidebar({ className }: { className?: string }) {
           </li>
 
           {/* Demo Data */}
-          <li>
+          <li style={{ display: 'none' }}>
             <NavGroup
               icon={<FiDatabase />}
               title='Demo Data'
