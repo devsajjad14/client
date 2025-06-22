@@ -1,0 +1,56 @@
+{
+  "statuses": ["pending", "processing", "completed", "cancelled"],
+  "payment_methods": ["credit_card", "paypal", "bank_transfer"],
+  "shipping_methods": ["standard", "express", "overnight"],
+  "countries": ["US", "CA", "UK", "AU"],
+  "states": {
+    "US": ["CA", "NY", "TX", "FL"],
+    "CA": ["ON", "BC", "QC"],
+    "UK": ["England", "Scotland", "Wales"],
+    "AU": ["NSW", "VIC", "QLD"]
+  },
+  "cities": {
+    "US": {
+      "CA": ["Los Angeles", "San Francisco", "San Diego"],
+      "NY": ["New York", "Buffalo", "Albany"],
+      "TX": ["Houston", "Dallas", "Austin"],
+      "FL": ["Miami", "Orlando", "Tampa"]
+    },
+    "CA": {
+      "ON": ["Toronto", "Ottawa", "Hamilton"],
+      "BC": ["Vancouver", "Victoria", "Surrey"],
+      "QC": ["Montreal", "Quebec City", "Laval"]
+    },
+    "UK": {
+      "England": ["London", "Manchester", "Birmingham"],
+      "Scotland": ["Edinburgh", "Glasgow", "Aberdeen"],
+      "Wales": ["Cardiff", "Swansea", "Newport"]
+    },
+    "AU": {
+      "NSW": ["Sydney", "Newcastle", "Wollongong"],
+      "VIC": ["Melbourne", "Geelong", "Ballarat"],
+      "QLD": ["Brisbane", "Gold Coast", "Sunshine Coast"]
+    }
+  },
+  "streets": [
+    "Main Street",
+    "Park Avenue",
+    "Broadway",
+    "Market Street",
+    "High Street",
+    "Church Road",
+    "Station Road",
+    "Victoria Street",
+    "Queen Street",
+    "King Street"
+  ],
+  "order_count": 50,
+  "items_per_order": {
+    "min": 1,
+    "max": 5
+  },
+  "quantity_per_item": {
+    "min": 1,
+    "max": 3
+  }
+} 

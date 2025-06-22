@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Disallow crawling of specific pages (optional)
+Disallow: /private/
+Disallow: /admin/
+

@@ -1,0 +1,25 @@
+{
+  "adminUsers": [
+    {
+      "username": "admin",
+      "password": "$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5Yx",
+      "email": "admin@example.com",
+      "role": "super_admin",
+      "isActive": true
+    },
+    {
+      "username": "manager",
+      "password": "$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5Yx",
+      "email": "manager@example.com",
+      "role": "admin",
+      "isActive": true
+    },
+    {
+      "username": "editor",
+      "password": "$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5Yx",
+      "email": "editor@example.com",
+      "role": "editor",
+      "isActive": true
+    }
+  ]
+} 
