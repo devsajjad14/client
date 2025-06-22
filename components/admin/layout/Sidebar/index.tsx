@@ -246,7 +246,7 @@ export function Sidebar({ className }: { className?: string }) {
           <li style={{ display: 'none' }}>
             <NavGroup
               icon={<FiDatabase />}
-              title='Demo Data'
+              title='Demo Datas'
               isOpen={isOpen}
               expanded={expandedGroup === 'Demo Data'}
               onToggle={() => handleGroupClick('Demo Data')}
@@ -278,7 +278,7 @@ export function Sidebar({ className }: { className?: string }) {
                 )}
               </div>
             </div>
-            
+
             <NavGroup
               icon={<FiLayers />}
               title='Data Manager'
