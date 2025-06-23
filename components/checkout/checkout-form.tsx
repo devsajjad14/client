@@ -18,7 +18,6 @@ import { saveBillingAddress, saveShippingAddress } from '@/lib/actions/checkout'
 import { useCartStore } from '@/lib/stores/cart-store'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { BACKEND_URL } from '@/lib/config'
 
 const steps = ['Billing', 'Shipping', 'Payment'] as const
 type Step = (typeof steps)[number]
@@ -89,6 +88,9 @@ const countryNameToCode: Record<string, string> = {
 function getCountryCode(country: string): string {
   return countryNameToCode[country] || country || 'US';
 }
+
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
 
 export default function CheckoutForm() {
   const [currentStep, setCurrentStep] = useState<Step>('Billing')
