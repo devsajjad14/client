@@ -119,7 +119,8 @@ export default function OrdersPage() {
   const loadOrders = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/orders')
+      // Fetch all orders by setting a high limit
+      const response = await fetch('/api/orders?limit=1000')
       if (!response.ok) throw new Error('Failed to fetch orders')
       const data = await response.json()
       setOrdersList(data.orders || [])
@@ -782,100 +783,69 @@ export default function OrdersPage() {
           </table>
         </div>
 
-        {/* Premium Pagination - Integrated into table card */}
-        <div className="flex items-center justify-between pt-6 mt-6 pb-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 pl-2 pb-1">
-            <span>Showing</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)}
-            </span>
-            <span>of</span>
-            <span className="font-medium text-gray-900 dark:text-white">{filteredOrders.length}</span>
-            <span>orders</span>
+        {/* Premium Pagination Block */}
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 bg-white border-t border-gray-100 rounded-b-xl mt-2 mb-4 shadow-sm">
+          <div className="text-sm text-gray-700 w-full md:w-auto text-left">
+            {`Showing ${startIndex + 1} to ${Math.min(endIndex, filteredOrders.length)} of ${filteredOrders.length} orders`}
           </div>
-          
           {totalPages > 1 && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center w-full md:w-auto space-x-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => paginate(1)}
+                onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="h-8 w-8 p-0"
               >
                 <FiChevronsLeft className="h-4 w-4" />
               </Button>
-              
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => paginate(currentPage - 1)}
+                onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="h-8 w-8 p-0"
               >
                 <FiChevronLeft className="h-4 w-4" />
               </Button>
-              
-              <div className="flex items-center space-x-1">
-                {(() => {
-                  const pageNumbers: (number | string)[] = []
-                  if (totalPages <= 7) {
-                    for (let i = 1; i <= totalPages; i++) {
-                      pageNumbers.push(i)
-                    }
-                  } else {
-                    if (currentPage <= 4) {
-                      pageNumbers.push(1, 2, 3, 4, 5, '...', totalPages)
-                    } else if (currentPage >= totalPages - 3) {
-                      pageNumbers.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
-                    } else {
-                      pageNumbers.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
-                    }
-                  }
-                  
-                  return pageNumbers.map((page, index) =>
-                    typeof page === 'number' ? (
-                      <Button
-                        key={index}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => paginate(page)}
-                        className={`h-9 w-9 p-0 ${
-                          currentPage === page
-                            ? "bg-blue-600 hover:bg-blue-700 text-white"
-                            : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    ) : (
-                      <span
-                        key={index}
-                        className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >
-                        ...
-                      </span>
-                    )
-                  )
-                })()}
-              </div>
-              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNumber
+                if (totalPages <= 5) {
+                  pageNumber = i + 1
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i
+                } else {
+                  pageNumber = currentPage - 2 + i
+                }
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {pageNumber}
+                  </Button>
+                )
+              })}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => paginate(currentPage + 1)}
+                onClick={() => setCurrentPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="h-8 w-8 p-0"
               >
                 <FiChevronRight className="h-4 w-4" />
               </Button>
-              
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => paginate(totalPages)}
+                onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="h-9 px-3 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="h-8 w-8 p-0"
               >
                 <FiChevronsRight className="h-4 w-4" />
               </Button>

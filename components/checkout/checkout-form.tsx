@@ -18,6 +18,7 @@ import { saveBillingAddress, saveShippingAddress } from '@/lib/actions/checkout'
 import { useCartStore } from '@/lib/stores/cart-store'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { BACKEND_URL } from '@/lib/config'
 
 const steps = ['Billing', 'Shipping', 'Payment'] as const
 type Step = (typeof steps)[number]
@@ -75,6 +76,20 @@ interface ShippingFormErrors {
 
 // Define a more explicit session type
 
+// Country name to ISO 2-letter code mapping
+const countryNameToCode: Record<string, string> = {
+  'Pakistan': 'PK',
+  'United States': 'US',
+  'India': 'IN',
+  'Canada': 'CA',
+  'United Kingdom': 'GB',
+  // Add more as needed
+};
+
+function getCountryCode(country: string): string {
+  return countryNameToCode[country] || country || 'US';
+}
+
 export default function CheckoutForm() {
   const [currentStep, setCurrentStep] = useState<Step>('Billing')
   const [isReturningCustomerOpen, setIsReturningCustomerOpen] = useState(false)
@@ -119,6 +134,10 @@ export default function CheckoutForm() {
   const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [shippingFormErrors, setShippingFormErrors] =
     useState<ShippingFormErrors>({})
+
+  const [paymentMethod, setPaymentMethod] = useState<'credit-card' | 'paypal'>('credit-card')
+
+  const cartItems = useCartStore((state) => state.items)
 
   // Initialize form data from session only once when component mounts
   useEffect(() => {
@@ -437,13 +456,102 @@ export default function CheckoutForm() {
           return
         }
       } else if (currentStep === 'Payment') {
-        try {
-          toast.success('Order placed successfully!')
-          router.push('/order-confirmation')
-        } catch (error: unknown) {
-          console.error('Error processing payment:', error)
-          toast.error('Failed to process payment')
-          return
+        if (paymentMethod === 'paypal') {
+          // Build payload for backend
+          const payload = {
+            order_id: generateOrderId(),
+            customer: {
+              email: formData.email,
+              first_name: formData.name.split(' ')[0] || '',
+              last_name: formData.name.split(' ').slice(1).join(' ') || '',
+              phone: session?.user?.phone || '',
+            },
+            items: cartItems.map(item => ({
+              product_id: String(item.productId),
+              name: item.name || 'Product',
+              quantity: Number(item.quantity) || 1,
+              unit_price: String(Number(item.price) || 0),
+              currency: 'USD',
+            })),
+            shipping_address: {
+              line1: shippingFormData.street,
+              line2: '',
+              city: shippingFormData.city,
+              state: shippingFormData.state,
+              postal_code: shippingFormData.postalCode,
+              country_code: getCountryCode(shippingFormData.country),
+            },
+            billing_address: {
+              line1: formData.street,
+              line2: '',
+              city: formData.city,
+              state: formData.state,
+              postal_code: formData.postalCode,
+              country_code: getCountryCode(formData.country),
+            },
+            subtotal: calculateSubtotal(cartItems),
+            tax_amount: calculateTax(cartItems),
+            shipping_amount: shippingCost,
+            discount_amount: 0,
+            total_amount: calculateTotal(cartItems, shippingCost),
+            currency: 'USD',
+            payment_method: 'paypal',
+            notes: '',
+          };
+          // Log the payload for debugging
+          console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+          // Use only valid product IDs for testing
+          const validProductIds = [1850, 1851, 1857, 1849, 1868, 1842, 1856, 1845, 1844, 1852, 1854, 1853, 1841, 1846];
+          // Prepare order items for DB insert
+          let orderItemsData: {
+            productId: number;
+            name: string;
+            quantity: number;
+            unitPrice: string;
+            totalPrice: string;
+            // Add other fields as needed (color, size, sku, etc.)
+          }[] = cartItems.map((item, idx) => {
+            const name = item.name || 'Product';
+            const quantity = Number(item.quantity) || 1;
+            const unitPrice = Number(item.price) || 0;
+            const totalPrice = unitPrice * quantity;
+            // Always use a valid productId from the list (cycle through for multiple items)
+            const productId = validProductIds[idx % validProductIds.length];
+            return {
+              productId,
+              name,
+              quantity,
+              unitPrice: String(unitPrice),
+              totalPrice: String(totalPrice),
+              // Add other fields as needed (color, size, sku, etc.)
+            };
+          });
+          console.log('Order items data for DB:', orderItemsData);
+          // POST to backend
+          try {
+            const response = await fetch(`${BACKEND_URL}/checkout/process-paypal`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+              toast.error(result.message || 'Failed to process PayPal order');
+              setIsLoading(false);
+              return;
+            }
+            // Redirect to thank you page with order info (no DB insert)
+            router.push(`/orders/thank-you?order_id=${result.order_id}&paypal_order_id=${result.paypal_order_id}`);
+            return;
+          } catch (fetchError) {
+            console.error('Fetch error:', fetchError);
+            toast.error('Network or fetch error.');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          toast.success('Order placed successfully!');
+          router.push('/order-confirmation');
         }
       }
     } catch (error: unknown) {
@@ -462,7 +570,11 @@ export default function CheckoutForm() {
     router,
     validateBillingForm,
     validateShippingForm,
-    setIsLoading
+    setIsLoading,
+    paymentMethod,
+    session,
+    cartItems,
+    shippingCost
   ])
 
   // Cache the handleInputChange function
@@ -535,6 +647,26 @@ export default function CheckoutForm() {
     },
     [setUser, setIsLoading, setLoginError]
   )
+
+  // Utility: Generate a simple order ID (for demo; use a better one in production)
+  function generateOrderId() {
+    return 'ORDER-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+  }
+
+  // Utility: Calculate subtotal
+  function calculateSubtotal(items: { price: number; quantity: number }[]): number {
+    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }
+
+  // Utility: Calculate tax (example: 8%)
+  function calculateTax(items: { price: number; quantity: number }[]): number {
+    return Math.round(calculateSubtotal(items) * 0.08 * 100) / 100;
+  }
+
+  // Utility: Calculate total
+  function calculateTotal(items: { price: number; quantity: number }[], shippingCost: number): number {
+    return Math.round((calculateSubtotal(items) + calculateTax(items) + shippingCost) * 100) / 100;
+  }
 
   return (
     <div className='max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
@@ -1149,8 +1281,9 @@ export default function CheckoutForm() {
                         type='radio'
                         id='credit-card'
                         name='payment-method'
+                        checked={paymentMethod === 'credit-card'}
+                        onChange={() => setPaymentMethod('credit-card')}
                         className='absolute top-5 right-5 h-4 w-4 text-black focus:ring-black'
-                        defaultChecked
                       />
                       <label htmlFor='credit-card' className='block'>
                         <span className='block text-sm font-medium text-gray-900'>
@@ -1246,6 +1379,8 @@ export default function CheckoutForm() {
                         type='radio'
                         id='paypal'
                         name='payment-method'
+                        checked={paymentMethod === 'paypal'}
+                        onChange={() => setPaymentMethod('paypal')}
                         className='absolute top-5 right-5 h-4 w-4 text-black focus:ring-black'
                       />
                       <label
