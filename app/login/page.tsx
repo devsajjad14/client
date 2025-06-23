@@ -4,6 +4,8 @@ import { LoginForm } from '@/components/auth/login-form'
 import { SocialLogin } from '@/components/auth/social-login'
 import Link from 'next/link'
 
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+
 export default async function LoginPage({
   searchParams,
 }: {

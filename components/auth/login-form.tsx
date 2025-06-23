@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/auth-store'
 
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+
 export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [showPasswordField, setShowPasswordField] = useState(false)
   const [email, setEmail] = useState('')

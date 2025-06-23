@@ -6,6 +6,8 @@ import { Icons } from '@/components/icons'
 
 type Provider = 'google' | 'facebook' | 'x'
 
+const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+
 export function SocialLogin({
   provider,
   disabled = false,
